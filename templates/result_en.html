@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+
+{% block title %}Analysis Results - HEALTHSCOPE{% endblock %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <div class="d-inline-flex align-items-center justify-content-center bg-light text-primary rounded-circle mb-3 shadow-sm"
+        style="width: 64px; height: 64px;">
+        <i class="bi bi-file-earmark-medical fs-2"></i>
+    </div>
+    <h4 class="page-title mb-1">Analysis Results</h4>
+    <p class="text-muted" style="font-size: 14px;">Symptom evaluation completed</p>
+</div>
+
+<div class="card border-0 bg-light mb-4" style="border-radius: 16px;">
+    <div class="card-body p-4">
+        <h6 class="card-subtitle mb-2 text-muted"
+            style="font-size: 13px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;">You entered:
+        </h6>
+        <p class="card-text text-dark mb-0" style="font-size: 15px; line-height: 1.6; font-style: italic;">
+            "{{ symptoms }}"
+        </p>
+    </div>
+</div>
+
+<h6 class="mb-3 text-dark" style="font-weight: 700; font-size: 16px;">AI Disease Match Results:</h6>
+
+<div class="mb-4">
+    {% if matches %}
+    <!-- Primary Matches (Top OR >= 70%) -->
+    {% set ns = namespace(top_shown=false, has_hidden=false) %}
+
+    <div id="primaryMatches">
+        {% for disease, data in matches.items() %}
+        {% if loop.index0 < 2 and (loop.first or data.confidence>= 70) %}
+            {% set ns.top_shown = true %}
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body p-3"
+                    style="border-radius: 12px; border: 2px solid {% if data.confidence >= 70 %}#dc3545{% elif data.confidence >= 40 %}#ffc107{% else %}#198754{% endif %}; background-color: #fcfdfe;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0 text-dark fw-bold">
+                            {{ disease }}
+                            {% if loop.first %}<i class="bi bi-star-fill text-warning ms-1"
+                                style="font-size: 12px;"></i>{%
+                            endif %}
+                        </h6>
+                        <span
+                            class="badge {% if data.confidence >= 70 %}bg-danger{% elif data.confidence >= 40 %}bg-warning text-dark{% else %}bg-success{% endif %}"
+                            style="font-size: 13px; border-radius: 6px;">
+                            {{ data.confidence }}% Match
+                        </span>
+                    </div>
+                    <div class="progress mb-3" style="height: 6px; border-radius: 3px; background-color: #e9ecef;">
+                        <div class="progress-bar {% if data.confidence >= 70 %}bg-danger{% elif data.confidence >= 40 %}bg-warning{% else %}bg-success{% endif %}"
+                            role="progressbar" style="width: {{ data.confidence }}%;"
+                            aria-valuenow="{{ data.confidence }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+
+
+
+                    <!-- Department Recommendation inside Card -->
+                    <div class="d-flex align-items-center bg-light p-2 rounded border"
+                        style="border-left: 3px solid #0d6efd !important;">
+                        <i class="bi bi-hospital text-primary me-2"></i>
+                        <span style="font-size: 13px; font-weight: 600;" class="text-dark">
+                            Recommended Department: <span class="text-primary">{{ dept_map.get(disease, 'General
+                                Physician')
+                                }}</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            {% set ns.has_hidden = true %}
+            {% endif %}
+            {% endfor %}
+    </div>
+
+    <!-- Hidden Matches (Rest of < 70%) -->
+    {% if ns.has_hidden %}
+    <div class="text-center mb-3">
+        <button class="btn btn-outline-secondary btn-sm rounded-pill px-4" type="button" data-bs-toggle="collapse"
+            data-bs-target="#detailedAnalysis" aria-expanded="false" aria-controls="detailedAnalysis"
+            id="toggleDetailsBtn">
+            View Other Possibilities <i class="bi bi-chevron-down ms-1"></i>
+        </button>
+    </div>
+
+    <div class="collapse" id="detailedAnalysis">
+        <h6 class="mb-3 text-muted" style="font-size: 14px; font-weight: 600;">Other Possibilities:</h6>
+        {% for disease, data in matches.items() %}
+        {% if not (loop.index0 < 2 and (loop.first or data.confidence>= 70)) %} <div
+                class="card border-0 shadow-sm mb-3 opacity-75"
+                style="border-radius: 12px; border-left: 4px solid #6c757d !important;">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0 text-dark fw-bold">{{ disease }}</h6>
+                        <span class="badge bg-secondary" style="font-size: 12px; border-radius: 6px;">
+                            {{ data.confidence }}% Match
+                        </span>
+                    </div>
+                    <div class="progress mb-2" style="height: 5px; border-radius: 3px; background-color: #f1f5f9;">
+                        <div class="progress-bar bg-secondary" role="progressbar" style="width: {{ data.confidence }}%;"
+                            aria-valuenow="{{ data.confidence }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <!-- Department hidden tier -->
+                    <div class="d-flex align-items-center text-muted mt-2" style="font-size: 11px;">
+                        <i class="bi bi-hospital me-1"></i>
+                        {{ dept_map.get(disease, 'General Physician') }}
+                    </div>
+
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="alert alert-warning border-0 shadow-sm mt-4"
+        style="border-radius: 12px; padding: 12px; font-size: 13px;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> This is an AI prediction tool, not official medical advice.
+        Please consult a doctor for diagnosis.
+    </div>
+    {% else %}
+    <div class="alert alert-secondary border-0 text-center shadow-sm" style="border-radius: 12px; padding: 24px;">
+        <div class="d-inline-flex align-items-center justify-content-center bg-white text-muted rounded-circle mb-3 shadow-sm"
+            style="width: 56px; height: 56px;">
+            <i class="bi bi-shield-exclamation fs-3"></i>
+        </div>
+        <h6 class="fw-bold text-dark mb-2">No strong match found.</h6>
+        <p class="text-muted mb-0" style="font-size: 14px; line-height: 1.5;">Our system couldn't confidently identify a
+            match. Please consult a <strong>General Physician</strong> for a comprehensive evaluation.</p>
+    </div>
+    {% endif %}
+</div>
+
+<div class="d-flex justify-content-between mt-3 pt-3 border-top">
+    <a href="{{ url_for('symptom_en') }}" class="text-muted" style="font-weight: 500; font-size: 14px;">
+        <i class="bi bi-arrow-left me-1"></i> Verify Again
+    </a>
+    <a href="{{ url_for('dashboard_en') }}" class="text-muted" style="font-weight: 500; font-size: 14px;">
+        <i class="bi bi-house me-1"></i> Home
+    </a>
+</div>
+
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const toggleDetailsBtn = document.getElementById('toggleDetailsBtn');
+        const detailedAnalysis = document.getElementById('detailedAnalysis');
+
+        if (toggleDetailsBtn && detailedAnalysis) {
+            detailedAnalysis.addEventListener('show.bs.collapse', function () {
+                toggleDetailsBtn.innerHTML = 'Hide Other Possibilities <i class="bi bi-chevron-up ms-1"></i>';
+            });
+            detailedAnalysis.addEventListener('hide.bs.collapse', function () {
+                toggleDetailsBtn.innerHTML = 'View Other Possibilities <i class="bi bi-chevron-down ms-1"></i>';
+            });
+        }
+    });
+</script>
+
+{% endblock %}

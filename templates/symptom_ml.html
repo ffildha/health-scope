@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}രോഗലക്ഷണ പരിശോധന - HEALTHSCOPE{% endblock %}
+
+{% block content %}
+<h4 class="page-title text-center mb-1">രോഗലക്ഷണ പരിശോധന</h4>
+<p class="text-center text-muted mb-4" style="font-size: 15px;">നിങ്ങൾക്ക് ഇന്ന് എങ്ങനെയുണ്ട്?</p>
+
+<form method="POST" action="{{ url_for('symptom_ml') }}">
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-end mb-2">
+            <label for="symptoms" class="form-label text-dark fw-bold mb-0" style="font-size: 15px;">നിങ്ങളുടെ
+                രോഗലക്ഷണങ്ങൾ വിവരിക്കുക</label>
+            <button type="button" id="startVoiceBtnMl" class="btn btn-sm btn-outline-primary"
+                style="border-radius: 20px; font-weight: 500;">
+                <i class="bi bi-mic me-1" id="micIconMl"></i><span id="micTextMl">ശബ്ദം വഴി നൽകുക</span>
+            </button>
+        </div>
+        <textarea class="form-control" id="symptoms" name="symptoms" rows="6"
+            placeholder="ഉദാഹരണത്തിന്, എനിക്ക് 3 ദിവസമായി കഠിനമായ തലവേദനയുണ്ട്, കൂടാതെ ക്ഷീണവും..." required
+            style="border-radius: 12px; resize: none;"></textarea>
+        <div class="form-text mt-2 text-muted" style="font-size: 13px;">രോഗത്തിന്റെ തീവ്രതയും എത്ര നാളായി ഉണ്ടെന്നും
+            നൽകുക.</div>
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100 shadow-sm mb-4" style="padding: 14px; font-size: 16px;">
+        ലക്ഷണങ്ങൾ പരിശോധിക്കുക <i class="bi bi-activity ms-2"></i>
+    </button>
+</form>
+
+<div class="d-flex justify-content-between mt-3 pt-3 border-top">
+    <a href="{{ url_for('dashboard_ml') }}" class="text-muted" style="font-weight: 500; font-size: 14px;">
+        <i class="bi bi-arrow-left me-1"></i> പുറകോട്ട്
+    </a>
+    <a href="{{ url_for('logout') }}" class="text-danger" style="font-weight: 500; font-size: 14px;">
+        <i class="bi bi-box-arrow-right me-1"></i> ലോഗ് ഔട്ട്
+    </a>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const btn = document.getElementById('startVoiceBtnMl');
+        const icon = document.getElementById('micIconMl');
+        const textSpan = document.getElementById('micTextMl');
+        const symptomInput = document.getElementById('symptoms');
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            btn.style.display = 'none';
+            return;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'ml-IN';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        let isRecording = false;
+
+        btn.addEventListener('click', () => {
+            if (isRecording) {
+                recognition.stop();
+            } else {
+                recognition.start();
+            }
+        });
+
+        recognition.onstart = function () {
+            isRecording = true;
+            btn.classList.replace('btn-outline-primary', 'btn-danger');
+            icon.classList.replace('bi-mic', 'bi-mic-fill');
+            textSpan.textContent = "കേൾക്കുന്നു...";
+        };
+
+        recognition.onresult = function (event) {
+            const transcript = event.results[0][0].transcript;
+            if (symptomInput.value.trim() === '') {
+                symptomInput.value = transcript;
+            } else {
+                symptomInput.value += ' ' + transcript;
+            }
+        };
+
+        recognition.onerror = function (event) {
+            console.error('Speech recognition error:', event.error);
+            alert('ശബ്ദം ലഭ്യമല്ല. ദയവായി വീണ്ടും ശ്രമിക്കുക. (Voice input not detected)');
+        };
+
+        recognition.onend = function () {
+            isRecording = false;
+            btn.classList.replace('btn-danger', 'btn-outline-primary');
+            icon.classList.replace('bi-mic-fill', 'bi-mic');
+            textSpan.textContent = "ശബ്ദം വഴി നൽകുക";
+        };
+    });
+</script>
+{% endblock %}

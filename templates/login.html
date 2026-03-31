@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}Log In - HEALTHSCOPE{% endblock %}
+
+{% block content %}
+<h4 class="page-title">Welcome Back</h4>
+
+<form method="POST" action="{{ url_for('login') }}">
+    <div class="mb-4">
+        <label for="email" class="form-label">Email Address</label>
+        <div class="input-group">
+            <span class="input-group-text bg-light px-3" style="border-radius: 12px 0 0 12px;"><i
+                    class="bi bi-envelope fs-5"></i></span>
+            <input type="email" class="form-control border-start-0 ps-1" id="email" name="email"
+                placeholder="name@example.com" required>
+        </div>
+    </div>
+
+    <div class="mb-4 pb-2">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <label for="password" class="form-label mb-0">Password</label>
+            <!-- Optional: Forgot password link -->
+            <a href="#" class="text-muted" style="font-size: 13px; font-weight: 500;">Forgot password?</a>
+        </div>
+        <div class="input-group">
+            <span class="input-group-text bg-light px-3" style="border-radius: 12px 0 0 12px;"><i
+                    class="bi bi-lock fs-5"></i></span>
+            <input type="password" class="form-control border-start-0 ps-1 password-input" id="password" name="password"
+                placeholder="Enter your password" required>
+            <span class="input-group-text toggle-password bg-white pe-3" style="border-radius: 0 12px 12px 0;">
+                <i class="bi bi-eye fs-5 text-muted" style="transition: transform 0.2s;"></i>
+            </span>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100 mb-4 shadow-sm">
+        Log In <i class="bi bi-arrow-right-short ms-1 fs-5 align-middle"></i>
+    </button>
+</form>
+
+<div class="text-center" style="color: var(--text-muted); font-size: 15px;">
+    <span>Don't have an account?</span> <a href="{{ url_for('signup') }}" class="fw-bold ms-1">Sign Up</a>
+</div>
+{% endblock %}

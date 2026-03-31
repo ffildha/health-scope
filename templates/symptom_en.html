@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}Symptom Checker - HEALTHSCOPE{% endblock %}
+
+{% block content %}
+<h4 class="page-title text-center mb-1">Symptom Checker</h4>
+<p class="text-center text-muted mb-4" style="font-size: 15px;">How are you feeling today?</p>
+
+<form method="POST" action="{{ url_for('symptom_en') }}">
+    <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-end mb-2">
+            <label for="symptoms" class="form-label text-dark fw-bold mb-0" style="font-size: 15px;">Describe your
+                symptoms</label>
+            <button type="button" id="startVoiceBtnEn" class="btn btn-sm btn-outline-primary"
+                style="border-radius: 20px; font-weight: 500;">
+                <i class="bi bi-mic me-1" id="micIconEn"></i><span id="micTextEn">Voice Input</span>
+            </button>
+        </div>
+        <textarea class="form-control" id="symptoms" name="symptoms" rows="6"
+            placeholder="E.g., I have been having a severe headache for 3 days and I feel tired..." required
+            style="border-radius: 12px; resize: none;"></textarea>
+        <div class="form-text mt-2 text-muted" style="font-size: 13px;">Please be detailed about the duration and
+            severity of your symptoms for an accurate analysis.</div>
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100 shadow-sm mb-4" style="padding: 14px; font-size: 16px;">
+        Analyze Symptoms <i class="bi bi-activity ms-2"></i>
+    </button>
+</form>
+
+<div class="d-flex justify-content-between mt-3 pt-3 border-top">
+    <a href="{{ url_for('dashboard_en') }}" class="text-muted" style="font-weight: 500; font-size: 14px;">
+        <i class="bi bi-arrow-left me-1"></i> Back
+    </a>
+    <a href="{{ url_for('logout') }}" class="text-danger" style="font-weight: 500; font-size: 14px;">
+        <i class="bi bi-box-arrow-right me-1"></i> Log Out
+    </a>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const btn = document.getElementById('startVoiceBtnEn');
+        const icon = document.getElementById('micIconEn');
+        const textSpan = document.getElementById('micTextEn');
+        const symptomInput = document.getElementById('symptoms');
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            btn.style.display = 'none';
+            return;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        let isRecording = false;
+
+        btn.addEventListener('click', () => {
+            if (isRecording) {
+                recognition.stop();
+            } else {
+                recognition.start();
+            }
+        });
+
+        recognition.onstart = function () {
+            isRecording = true;
+            btn.classList.replace('btn-outline-primary', 'btn-danger');
+            icon.classList.replace('bi-mic', 'bi-mic-fill');
+            textSpan.textContent = "Listening...";
+        };
+
+        recognition.onresult = function (event) {
+            const transcript = event.results[0][0].transcript;
+            if (symptomInput.value.trim() === '') {
+                symptomInput.value = transcript;
+            } else {
+                symptomInput.value += ' ' + transcript;
+            }
+        };
+
+        recognition.onerror = function (event) {
+            console.error('Speech recognition error:', event.error);
+            alert('Voice input not detected. Please try again.');
+        };
+
+        recognition.onend = function () {
+            isRecording = false;
+            btn.classList.replace('btn-danger', 'btn-outline-primary');
+            icon.classList.replace('bi-mic-fill', 'bi-mic');
+            textSpan.textContent = "Voice Input";
+        };
+    });
+</script>
+
+{% endblock %}

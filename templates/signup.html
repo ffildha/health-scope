@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign Up - HEALTHSCOPE{% endblock %}
+
+{% block content %}
+<h4 class="page-title">Create an Account</h4>
+
+<form method="POST" action="{{ url_for('signup') }}">
+    <div class="mb-4">
+        <label for="name" class="form-label">Full Name</label>
+        <div class="input-group">
+            <span class="input-group-text bg-light px-3" style="border-radius: 12px 0 0 12px;"><i
+                    class="bi bi-person fs-5"></i></span>
+            <input type="text" class="form-control border-start-0 ps-1" id="name" name="name"
+                placeholder="E.g. John Doe" required>
+        </div>
+    </div>
+
+    <div class="mb-4">
+        <label for="email" class="form-label">Email Address</label>
+        <div class="input-group">
+            <span class="input-group-text bg-light px-3" style="border-radius: 12px 0 0 12px;"><i
+                    class="bi bi-envelope fs-5"></i></span>
+            <input type="email" class="form-control border-start-0 ps-1" id="email" name="email"
+                placeholder="name@example.com" required>
+        </div>
+    </div>
+
+    <div class="mb-4 pb-2">
+        <label for="password" class="form-label">Password</label>
+        <div class="input-group">
+            <span class="input-group-text bg-light px-3" style="border-radius: 12px 0 0 12px;"><i
+                    class="bi bi-lock fs-5"></i></span>
+            <input type="password" class="form-control border-start-0 ps-1 password-input" id="password" name="password"
+                placeholder="Create a secure password" required>
+            <span class="input-group-text toggle-password bg-white pe-3" style="border-radius: 0 12px 12px 0;">
+                <i class="bi bi-eye fs-5 text-muted" style="transition: transform 0.2s;"></i>
+            </span>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100 mb-4 shadow-sm">
+        Create Account <i class="bi bi-person-plus ms-1 fs-5 align-middle"></i>
+    </button>
+</form>
+
+<div class="text-center" style="color: var(--text-muted); font-size: 15px;">
+    <span>Already have an account?</span> <a href="{{ url_for('login') }}" class="fw-bold ms-1">Log In</a>
+</div>
+{% endblock %}

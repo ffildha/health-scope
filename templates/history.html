@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}
+{% if session.get('language') == 'ml' %}നിങ്ങളുടെ വിശകലന ചരിത്രം - HEALTHSCOPE{% else %}Your Analysis History -
+HEALTHSCOPE{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <div class="d-inline-flex align-items-center justify-content-center bg-light text-primary rounded-circle mb-3 shadow-sm"
+        style="width: 64px; height: 64px;">
+        <i class="bi bi-clock-history fs-2"></i>
+    </div>
+    <h4 class="page-title mb-1">
+        {% if session.get('language') == 'ml' %}നിങ്ങളുടെ വിശകലന ചരിത്രം{% else %}Your Analysis History{% endif %}
+    </h4>
+    <p class="text-muted" style="font-size: 14px;">
+        {% if session.get('language') == 'ml' %}മുൻകാല രോഗലക്ഷണ പരിശോധനകൾ കാണുക.{% else %}Review your previous symptom
+        checks.{% endif %}
+    </p>
+</div>
+
+{% if history %}
+<div class="table-responsive rounded shadow-sm border border-1 mb-4 bg-white"
+    style="border-radius: 12px; overflow: hidden;">
+    <table class="table table-hover align-middle mb-0" style="font-size: 14px;">
+        <thead class="bg-light">
+            <tr>
+                {% if session.get('language') == 'ml' %}
+                <th scope="col" class="py-3 text-muted" style="font-weight: 600;">തീയതി</th>
+                <th scope="col" class="py-3 text-muted" style="font-weight: 600;">ലക്ഷണങ്ങൾ</th>
+                <th scope="col" class="py-3 text-muted" style="font-weight: 600;">രോഗം</th>
+                <th scope="col" class="py-3 text-muted" style="font-weight: 600;">ആത്മവിശ്വാസം</th>
+                <th scope="col" class="py-3 text-muted" style="font-weight: 600;">വകുപ്പ്</th>
+                {% else %}
+                <th scope="col" class="py-3 text-muted" style="font-weight: 600;">Date</th>
+                <th scope="col" class="py-3 text-muted" style="font-weight: 600;">Symptoms</th>
+                <th scope="col" class="py-3 text-muted" style="font-weight: 600;">Disease</th>
+                <th scope="col" class="py-3 text-muted" style="font-weight: 600;">Confidence</th>
+                <th scope="col" class="py-3 text-muted" style="font-weight: 600;">Department</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in history %}
+            <tr>
+                <td class="text-nowrap text-muted" style="font-size: 13px;">{{ record['timestamp'][:16] }}</td>
+                <td style="max-width: 250px; font-style: italic; color: #495057;">"{{ record['symptoms'] }}"</td>
+                <td class="fw-bold text-dark">{{ record['predicted_disease'] }}</td>
+                <td>
+                    {% set conf = record['confidence'] | int %}
+                    <span class="badge {% if conf >= 70 %}bg-danger{% elif conf >= 40 %}bg-warning text-dark{% else %}bg-success{% endif %} rounded-pill">
+                        {{ record['confidence'] }}%
+                    </span>
+                </td>
+                <td class="text-muted" style="font-size: 13px;">
+                    <i class="bi bi-hospital me-1 text-primary"></i>
+                    {{ record['department'] }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-secondary border-0 text-center shadow-sm" style="border-radius: 12px; padding: 24px;">
+    <div class="d-inline-flex align-items-center justify-content-center bg-white text-muted rounded-circle mb-3 shadow-sm"
+        style="width: 56px; height: 56px;">
+        <i class="bi bi-journal-x fs-3"></i>
+    </div>
+    <h6 class="fw-bold text-dark mb-2">
+        {% if session.get('language') == 'ml' %}മുമ്പത്തെ വിശകലനം കണ്ടെത്തിയില്ല.{% else %}No previous analysis found.{%
+        endif %}
+    </h6>
+    <p class="text-muted mb-0" style="font-size: 14px; line-height: 1.5;">
+        {% if session.get('language') == 'ml' %}മുമ്പത്തെ വിശകലനം കണ്ടെത്തിയില്ല.{% else %}No previous analysis found.{%
+        endif %}
+    </p>
+</div>
+{% endif %}
+
+<div class="d-flex justify-content-center mt-4 border-top pt-3">
+    <a href="{{ url_for('language') }}" class="text-muted text-decoration-none"
+        style="font-weight: 500; font-size: 14px;">
+        <i class="bi bi-house me-1"></i> {% if session.get('language') == 'ml' %}പഴയ പേജിലേക്ക് തിരികെ പോവുക{% else
+        %}Return Home{% endif %}
+    </a>
+</div>
+{% endblock %}

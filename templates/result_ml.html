@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+
+{% block title %}പരിശോധനാ ഫലങ്ങൾ - HEALTHSCOPE{% endblock %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <div class="d-inline-flex align-items-center justify-content-center bg-light text-primary rounded-circle mb-3 shadow-sm"
+        style="width: 64px; height: 64px;">
+        <i class="bi bi-file-earmark-medical fs-2"></i>
+    </div>
+    <h4 class="page-title mb-1">പരിശോധനാ ഫലങ്ങൾ</h4>
+    <p class="text-muted" style="font-size: 14px;">രോഗലക്ഷണ പരിശോധന പൂർത്തിയായി</p>
+</div>
+
+<div class="card border-0 bg-light mb-4" style="border-radius: 16px;">
+    <div class="card-body p-4">
+        <h6 class="card-subtitle mb-2 text-muted"
+            style="font-size: 13px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;">നിങ്ങൾ നൽകിയ
+            ലക്ഷണങ്ങൾ:</h6>
+        <p class="card-text text-dark mb-0" style="font-size: 15px; line-height: 1.6; font-style: italic;">
+            "{{ symptoms }}"
+        </p>
+    </div>
+</div>
+
+
+<div class="mb-4">
+    {% if matches %}
+    <!-- Primary Matches (Top OR >= 70%) -->
+    {% set ns = namespace(top_shown=false, has_hidden=false) %}
+
+    <div id="primaryMatches">
+        {% for disease, data in matches.items() %}
+        {% if loop.index0 < 2 and (loop.first or data.confidence>= 70) %}
+            {% set ns.top_shown = true %}
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body p-3"
+                    style="border-radius: 12px; border: 2px solid {% if data.confidence >= 70 %}#dc3545{% elif data.confidence >= 40 %}#ffc107{% else %}#198754{% endif %}; background-color: #fcfdfe;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0 text-dark fw-bold">
+                            {{ disease_names.get(disease, disease) }}
+                            {% if loop.first %}<i class="bi bi-star-fill text-warning ms-1"
+                                style="font-size: 12px;"></i>{%
+                            endif %}
+                        </h6>
+                        <span
+                            class="badge {% if data.confidence >= 70 %}bg-danger{% elif data.confidence >= 40 %}bg-warning text-dark{% else %}bg-success{% endif %}"
+                            style="font-size: 13px; border-radius: 6px;">
+                            {{ data.confidence }}% സാധ്യത ശതമാനം
+                        </span>
+                    </div>
+                    <div class="progress mb-3" style="height: 6px; border-radius: 3px; background-color: #e9ecef;">
+                        <div class="progress-bar {% if data.confidence >= 70 %}bg-danger{% elif data.confidence >= 40 %}bg-warning{% else %}bg-success{% endif %}"
+                            role="progressbar" style="width: {{ data.confidence }}%;"
+                            aria-valuenow="{{ data.confidence }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+
+
+
+                    <!-- Department Recommendation inside Card -->
+                    <div class="d-flex align-items-center bg-light p-2 rounded border"
+                        style="border-left: 3px solid #0d6efd !important;">
+                        <i class="bi bi-hospital text-primary me-2"></i>
+                        <span style="font-size: 13px; font-weight: 600;" class="text-dark">
+                            ശുപാർശ ചെയ്യുന്ന വിഭാഗം: <span class="text-primary">{{ dept_map.get(disease, 'ജനറൽ ഫിസിഷ്യനെ
+                                സമീപിക്കുക') }}</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            {% set ns.has_hidden = true %}
+            {% endif %}
+            {% endfor %}
+    </div>
+
+    <!-- Hidden Matches (Rest of < 70%) -->
+    {% if ns.has_hidden %}
+    <div class="text-center mb-3">
+        <button class="btn btn-outline-secondary btn-sm rounded-pill px-4" type="button" data-bs-toggle="collapse"
+            data-bs-target="#detailedAnalysisMl" aria-expanded="false" aria-controls="detailedAnalysisMl"
+            id="toggleDetailsBtnMl">
+            മറ്റു സാധ്യതകൾ കാണുക <i class="bi bi-chevron-down ms-1"></i>
+        </button>
+    </div>
+
+    <div class="collapse" id="detailedAnalysisMl">
+        <h6 class="mb-3 text-muted" style="font-size: 14px; font-weight: 600;">മറ്റു സാധ്യതകൾ:</h6>
+        {% for disease, data in matches.items() %}
+        {% if not (loop.index0 < 2 and (loop.first or data.confidence>= 70)) %} <div
+                class="card border-0 shadow-sm mb-3 opacity-75"
+                style="border-radius: 12px; border-left: 4px solid #6c757d !important;">
+                <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0 text-dark fw-bold">{{ disease_names.get(disease, disease) }}</h6>
+                        <span class="badge bg-secondary" style="font-size: 12px; border-radius: 6px;">
+                            {{ data.confidence }}% സാധ്യത ശതമാനം
+                        </span>
+                    </div>
+                    <div class="progress mb-2" style="height: 5px; border-radius: 3px; background-color: #f1f5f9;">
+                        <div class="progress-bar bg-secondary" role="progressbar" style="width: {{ data.confidence }}%;"
+                            aria-valuenow="{{ data.confidence }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+
+                    <!-- Mini Department Label -->
+                    <div class="d-flex align-items-center text-muted mt-2" style="font-size: 11px;">
+                        <i class="bi bi-hospital me-1"></i>
+                        {{ dept_map.get(disease, 'ജനറൽ ഫിസിഷ്യനെ സമീപിക്കുക') }}
+                    </div>
+
+
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="alert alert-warning border-0 shadow-sm mt-4"
+        style="border-radius: 12px; padding: 12px; font-size: 13px;">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> ഇതൊരു AI പ്രവചന സംവിധാനമാണ്, ഔദ്യോഗിക വൈദ്യോപദേശമല്ല.
+        രോഗനിർണ്ണയത്തിനായി ഡോക്ടറെ സമീപിക്കുക.
+    </div>
+    {% else %}
+    <div class="alert alert-secondary border-0 text-center shadow-sm" style="border-radius: 12px; padding: 24px;">
+        <div class="d-inline-flex align-items-center justify-content-center bg-white text-muted rounded-circle mb-3 shadow-sm"
+            style="width: 56px; height: 56px;">
+            <i class="bi bi-shield-exclamation fs-3"></i>
+        </div>
+        <h6 class="fw-bold text-dark mb-2">ശക്തമായ പൊരുത്തം കണ്ടെത്താനായില്ല.</h6>
+        <p class="text-muted mb-0" style="font-size: 14px; line-height: 1.5;">ദയവായി ജനറൽ ഫിസിഷ്യനെ സമീപിക്കുക.</p>
+    </div>
+    {% endif %}
+</div>
+
+<div class="d-flex justify-content-between mt-3 pt-3 border-top">
+    <a href="{{ url_for('symptom_ml') }}" class="text-muted" style="font-weight: 500; font-size: 14px;">
+        <i class="bi bi-arrow-left me-1"></i> വീണ്ടും പരിശോധിക്കുക
+    </a>
+    <a href="{{ url_for('dashboard_ml') }}" class="text-muted" style="font-weight: 500; font-size: 14px;">
+        <i class="bi bi-house me-1"></i> ഹോം
+    </a>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const toggleDetailsBtnMl = document.getElementById('toggleDetailsBtnMl');
+        const detailedAnalysisMl = document.getElementById('detailedAnalysisMl');
+
+        if (toggleDetailsBtnMl && detailedAnalysisMl) {
+            detailedAnalysisMl.addEventListener('show.bs.collapse', function () {
+                toggleDetailsBtnMl.innerHTML = 'മറ്റു സാധ്യതകൾ മറയ്ക്കുക <i class="bi bi-chevron-up ms-1"></i>';
+            });
+            detailedAnalysisMl.addEventListener('hide.bs.collapse', function () {
+                toggleDetailsBtnMl.innerHTML = 'മറ്റു സാധ്യതകൾ കാണുക <i class="bi bi-chevron-down ms-1"></i>';
+            });
+        }
+    });
+</script>
+
+{% endblock %}

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Title can be dynamically changed based on the page -->
+    <title>{% block title %}HEALTHSCOPE - Smart Symptom Analysis{% endblock %}</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Custom Styles -->
+    <style>
+        :root {
+            --primary-color: #0d9488;
+            /* Premium Teal */
+            --primary-hover: #0f766e;
+            --primary-light: #ccfbf1;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --bg-gradient-start: #f0fdfa;
+            /* Very light teal */
+            --bg-gradient-end: #e2e8f0;
+            /* Light slate */
+            --card-shadow: 0 20px 40px -10px rgba(13, 148, 136, 0.15);
+            --input-border: #cbd5e1;
+        }
+
+        body {
+            /* Full viewport height for vertical centering */
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* Consistent single-card layout for ALL pages */
+        .auth-card {
+            background: white;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 24px;
+            box-shadow: var(--card-shadow);
+            width: 100%;
+            /* Strict max width for consistency (450px) */
+            max-width: 450px;
+            overflow: hidden;
+            padding: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .auth-header {
+            text-align: center;
+            padding: 35px 30px 15px;
+        }
+
+        .brand-logo-container {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 56px;
+            height: 56px;
+            background-color: var(--primary-light);
+            border-radius: 16px;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            font-size: 28px;
+            box-shadow: 0 8px 16px rgba(13, 148, 136, 0.15);
+        }
+
+        .brand-name {
+            color: var(--text-main);
+            font-weight: 700;
+            font-size: 26px;
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
+        }
+
+        .brand-name span {
+            color: var(--primary-color);
+        }
+
+        .tagline {
+            color: var(--text-muted);
+            font-size: 14.5px;
+            font-weight: 400;
+            margin-bottom: 5px;
+            line-height: 1.5;
+        }
+
+        .auth-body {
+            padding: 20px 35px 40px;
+        }
+
+        /* Reusable Form Styles */
+        .form-label {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-main);
+            margin-bottom: 8px;
+        }
+
+        .form-control {
+            border-radius: 12px;
+            padding: 14px 16px;
+            border: 1.5px solid var(--input-border);
+            font-size: 15px;
+            transition: all 0.3s ease;
+            color: var(--text-main);
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-hover);
+            box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.1);
+        }
+
+        .input-group-text {
+            border-radius: 12px;
+            background-color: transparent;
+            border: 1.5px solid var(--input-border);
+            color: var(--text-muted);
+            transition: all 0.3s ease;
+        }
+
+        .input-group:focus-within .input-group-text {
+            border-color: var(--primary-hover);
+            color: var(--primary-color);
+        }
+
+        .input-group-text.bg-light {
+            background-color: #f8fafc !important;
+        }
+
+        .input-group-text.toggle-password {
+            cursor: pointer;
+        }
+
+        .input-group-text.toggle-password:hover i {
+            color: var(--primary-hover);
+        }
+
+        .form-control.password-input {
+            border-right: none;
+            border-radius: 0;
+        }
+
+        /* Reusable Button Styles */
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            border-radius: 12px;
+            padding: 14px;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(255, 255, 255, 0.2), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            border-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -10px rgba(13, 148, 136, 0.6);
+        }
+
+        .btn-primary:hover::after {
+            opacity: 1;
+        }
+
+        /* Links */
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        a:hover {
+            color: var(--primary-hover);
+            text-decoration: underline;
+            text-underline-offset: 4px;
+        }
+
+        /* Flash Messages */
+        .alert {
+            border-radius: 12px;
+            border: none;
+            padding: 16px;
+            font-weight: 500;
+            font-size: 14.5px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .alert-dismissible .btn-close {
+            padding: 1.05rem 1rem;
+        }
+
+        .alert-success {
+            background-color: #ecfdf5;
+            color: #065f46;
+            border-left: 4px solid #10b981;
+        }
+
+        .alert-danger {
+            background-color: #fef2f2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+        }
+
+        .alert-warning {
+            background-color: #fffbeb;
+            color: #92400e;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .alert-info {
+            background-color: #eff6ff;
+            color: #1e40af;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .page-title {
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 20px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+    </style>
+    <!-- Allow child templates to append styles -->
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+
+    <div class="container d-flex justify-content-center">
+        <div class="auth-card">
+            <!-- GLOBAL BRAND HEADER (Always visible on every page) -->
+            <div class="auth-header border-bottom pb-4 mb-4">
+                <div class="brand-logo-container">
+                    <i class="bi bi-heart-pulse-fill"></i>
+                </div>
+                <h1 class="brand-name">
+                    HEALTH<span>SCOPE</span>
+                </h1>
+                <p class="tagline">Smart Symptom Analysis for<br>Chronic Disease Awareness</p>
+            </div>
+
+            <div class="auth-body pt-0">
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <div class="flash-messages mb-4">
+                    {% for category, message in messages %}
+                    {% set bs_class = category %}
+                    {% if category == 'error' %}{% set bs_class = 'danger' %}{% endif %}
+                    <div class="alert alert-{{ bs_class }} alert-dismissible fade show" role="alert">
+                        {% if bs_class == 'success' %}<i class="bi bi-check-circle-fill me-2 fs-5"></i>
+                        {% elif bs_class == 'danger' %}<i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+                        {% elif bs_class == 'warning' %}<i class="bi bi-exclamation-circle-fill me-2 fs-5"></i>
+                        {% else %}<i class="bi bi-info-circle-fill me-2 fs-5"></i>{% endif %}
+                        <div>{{ message }}</div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endwith %}
+
+                <!-- DYNAMIC CONTENT INJECTED HERE -->
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Password Visibility Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const togglePassword = document.querySelectorAll('.toggle-password');
+            togglePassword.forEach(function (icon) {
+                icon.addEventListener('click', function (e) {
+                    const passwordInput = this.closest('.input-group').querySelector('input');
+                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                    passwordInput.setAttribute('type', type);
+
+                    const iconElement = this.querySelector('i');
+                    iconElement.style.transform = 'scale(0.8)';
+                    setTimeout(() => {
+                        iconElement.classList.toggle('bi-eye');
+                        iconElement.classList.toggle('bi-eye-slash');
+                        iconElement.style.transform = 'scale(1)';
+                    }, 100);
+                });
+            });
+        });
+    </script>
+    <!-- Allow child templates to append scripts -->
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>
