@@ -20,7 +20,8 @@ except FileNotFoundError:
     ml_model = None
     ml_vectorizer = None
 # Secret key is needed for session management and flash messages
-app.secret_key = 'your_super_secret_key_here' 
+import os
+app.secret_key = os.environ.get('SECRET_KEY', 'default-secret-key-for-local-dev') 
 
 # Database initialization
 def init_db():
@@ -425,6 +426,8 @@ def history():
     
     return render_template('history.html', name=session['user_name'], history=history_records)
 
+# Initialize the database when the module is imported (needed for Gunicorn)
+init_db()
+
 if __name__ == '__main__':
-    init_db() # Initialize the database when the app starts
     app.run(debug=True)
