@@ -27,6 +27,12 @@ symptom_map = {
     "difficulty breathing": "shortness of breath",
     "difficulty in breathing": "shortness of breath",
     "cant breathe": "shortness of breath",
+    "cannot breathe": "shortness of breath",
+    "cant breath": "shortness of breath",
+    "run out of breath": "shortness of breath",
+    "run out of breth": "shortness of breath",
+    "breth": "breath",
+    "breath easily": "shortness of breath",
     "ശ്വാസം എടുക്കാൻ ബുദ്ധിമുട്ട്": "ശ്വാസം മുട്ടൽ",
 
     # Arthritis
@@ -59,8 +65,46 @@ def normalize_text(text):
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 
+    # Remove excessive spaces
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
+
+# --- DURATION DETECTION LAYER ---
+def get_duration_score(text):
+    text = str(text).lower()
+    score = 0
+    
+    # Mapping written numbers to numerical values (EN & ML)
+    num_map = {
+        "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,
+        "ഒരു": 1, "രണ്ട്": 2, "മൂന്ന്": 3, "നാല്": 4, "അഞ്ച്": 5, "ആറ്": 6, "ഏഴ്": 7,
+        "one month": 30, "two months": 60, "three months": 90, "ഒരു മാസം": 30
+    }
+
+    # 1. Check for Days
+    day_match = re.search(r'(\d+|one|two|three|four|five|six|seven|ഒരു|രണ്ട്|മൂന്ന്|നാല്|അഞ്ച്|ആറ്|ഏഴ്)\s+(day|days|ദിവസം|ദിവസമായി)', text)
+    if day_match:
+        val = day_match.group(1)
+        days = int(val) if val.isdigit() else num_map.get(val, 0)
+        if days > 7: score = 2
+        elif days > 3: score = 1
+    
+    # 2. Check for Weeks
+    week_match = re.search(r'(\d+|one|two|three|four|ഒരു|രണ്ട്|മൂന്ന്|നാല്)\s+(week|weeks|ആഴ്ച|ആഴ്ചയായി)', text)
+    if week_match:
+        score = 3
+        
+    # 3. Check for Months
+    month_match = re.search(r'(\d+|one|two|three|ഒരു|രണ്ട്|മൂന്ന്)\s+(month|months|മാസം|മാസമായി)', text)
+    if month_match:
+        score = 5
+        
+    return score
+
 def get_symptom_weights(text):
     text = str(text).lower()
+    duration_bonus = get_duration_score(text)
+    
     weights = {
         "Migraine": 0, "Hypertension": 0, "Diabetes": 0,
         "Asthma": 0, "Gastritis": 0, "Arthritis": 0
@@ -85,7 +129,7 @@ def get_symptom_weights(text):
     if "blurred vision" in text or "കാഴ്ച മങ്ങൽ" in text: weights["Diabetes"] += 2
 
     # Asthma
-    if "shortness of breath" in text or "ശ്വാസം മുട്ടൽ" in text: weights["Asthma"] += 3
+    if "shortness of breath" in text or "ശ്വാസം മുട്ടൽ" in text or "breath" in text: weights["Asthma"] += 4
     if "wheezing" in text or "വീസിംഗ്" in text: weights["Asthma"] += 3
     if "chest tightness" in text or "നെഞ്ച് കുരുക്ക്" in text: weights["Asthma"] += 2
     if "coughing" in text: weights["Asthma"] += 2
@@ -100,6 +144,11 @@ def get_symptom_weights(text):
     if "joint pain" in text or "സന്ധിവേദന" in text or "മുട്ടുവേദന" in text or "knee pain" in text: weights["Arthritis"] += 3
     if "stiffness" in text or "സന്ധി മുറുകൽ" in text: weights["Arthritis"] += 2
     if "swelling" in text or "വീക്കം" in text: weights["Arthritis"] += 2
+
+    # APPLY DURATION BONUS
+    for disease in weights:
+        if weights[disease] > 0:
+            weights[disease] += duration_bonus
 
     return [
         weights["Migraine"], weights["Hypertension"], weights["Diabetes"],

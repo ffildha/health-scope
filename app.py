@@ -51,6 +51,24 @@ def init_db():
             FOREIGN KEY (user_id) REFERENCES users (id)
         )
     ''')
+
+    # Admin table initialization
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS admins (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            email TEXT NOT NULL UNIQUE,
+            password TEXT NOT NULL
+        )
+    ''')
+    
+    # Initialize a default admin if none exists (healthscope@gmail.com / health123)
+    cursor.execute('SELECT * FROM admins WHERE email = ?', ('healthscope@gmail.com',))
+    if not cursor.fetchone():
+        hashed_pw = generate_password_hash('health123')
+        cursor.execute('INSERT INTO admins (name, email, password) VALUES (?, ?, ?)', 
+                       ('Main Admin', 'healthscope@gmail.com', hashed_pw))
+
     conn.commit()
     conn.close()
 
@@ -81,6 +99,12 @@ symptom_map = {
     "difficulty breathing": "shortness of breath",
     "difficulty in breathing": "shortness of breath",
     "cant breathe": "shortness of breath",
+    "cannot breathe": "shortness of breath",
+    "cant breath": "shortness of breath",
+    "run out of breath": "shortness of breath",
+    "run out of breth": "shortness of breath",
+    "breth": "breath",
+    "breath easily": "shortness of breath",
     "ശ്വാസം എടുക്കാൻ ബുദ്ധിമുട്ട്": "ശ്വാസം മുട്ടൽ",
 
     # Arthritis
@@ -109,8 +133,43 @@ def normalize_text(text):
         text = text.replace(variant.lower(), standard.lower())
     return re.sub(r'\s+', ' ', text).strip()
 
+# --- DURATION DETECTION LAYER ---
+def get_duration_score(text):
+    text = str(text).lower()
+    score = 0
+    
+    # Mapping written numbers to numerical values (EN & ML)
+    num_map = {
+        "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,
+        "ഒരു": 1, "രണ്ട്": 2, "മൂന്ന്": 3, "നാല്": 4, "അഞ്ച്": 5, "ആറ്": 6, "ഏഴ്": 7,
+        "one month": 30, "two months": 60, "three months": 90, "ഒരു മാസം": 30
+    }
+
+    # 1. Check for Days
+    day_match = re.search(r'(\d+|one|two|three|four|five|six|seven|ഒരു|രണ്ട്|മൂന്ന്|നാല്|അഞ്ച്|ആറ്|ഏഴ്)\s+(day|days|ദിവസം|ദിവസമായി)', text)
+    if day_match:
+        val = day_match.group(1)
+        days = int(val) if val.isdigit() else num_map.get(val, 0)
+        # Weight increase: +1 if > 3 days, +2 if > 7 days
+        if days > 7: score = 2
+        elif days > 3: score = 1
+    
+    # 2. Check for Weeks
+    week_match = re.search(r'(\d+|one|two|three|four|ഒരു|രണ്ട്|മൂന്ന്|നാല്)\s+(week|weeks|ആഴ്ച|ആഴ്ചയായി)', text)
+    if week_match:
+        score = 3 # Stronger indicator for chronic symptoms
+        
+    # 3. Check for Months
+    month_match = re.search(r'(\d+|one|two|three|ഒരു|രണ്ട്|മൂന്ന്)\s+(month|months|മാസം|മാസമായി)', text)
+    if month_match:
+        score = 5 # Very strong chronic indicator
+        
+    return score
+
 def get_symptom_weights(text):
     text = str(text).lower()
+    duration_bonus = get_duration_score(text)
+    
     weights = {
         "Migraine": 0, "Hypertension": 0, "Diabetes": 0,
         "Asthma": 0, "Gastritis": 0, "Arthritis": 0
@@ -135,7 +194,7 @@ def get_symptom_weights(text):
     if "blurred vision" in text or "കാഴ്ച മങ്ങൽ" in text: weights["Diabetes"] += 2
 
     # Asthma
-    if "shortness of breath" in text or "ശ്വാസം മുട്ടൽ" in text: weights["Asthma"] += 3
+    if "shortness of breath" in text or "ശ്വാസം മുട്ടൽ" in text or "breath" in text: weights["Asthma"] += 4
     if "wheezing" in text or "വീസിംഗ്" in text: weights["Asthma"] += 3
     if "chest tightness" in text or "നെഞ്ച് കുരുക്ക്" in text: weights["Asthma"] += 2
     if "coughing" in text: weights["Asthma"] += 2
@@ -150,6 +209,12 @@ def get_symptom_weights(text):
     if "joint pain" in text or "സന്ധിവേദന" in text or "മുട്ടുവേദന" in text or "knee pain" in text: weights["Arthritis"] += 3
     if "stiffness" in text or "സന്ധി മുറുകൽ" in text: weights["Arthritis"] += 2
     if "swelling" in text or "വീക്കം" in text: weights["Arthritis"] += 2
+
+    # APPLY DURATION BONUS
+    # If the user mentioned a long duration, slightly boost all matched categories
+    for disease in weights:
+        if weights[disease] > 0:
+            weights[disease] += duration_bonus
 
     return [
         weights["Migraine"], weights["Hypertension"], weights["Diabetes"],
@@ -234,10 +299,8 @@ def match_diseases(raw_text):
 
 @app.route('/')
 def home():
-    # If user is logged in, show language selection, otherwise redirect to login
-    if 'user_id' in session:
-        return redirect(url_for('language'))
-    return redirect(url_for('login'))
+    # Show navigation landing page
+    return render_template('index.html')
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -474,6 +537,188 @@ def clear_history():
     flash('All history cleared.', 'success')
     return redirect(url_for('history'))
 
+
+# --- ADMIN PANEL ROUTES ---
+
+def admin_required(f):
+    from functools import wraps
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'admin_id' not in session:
+            flash('Admin access required.', 'danger')
+            return redirect(url_for('admin_login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+
+        conn = get_db_connection()
+        admin = conn.execute('SELECT * FROM admins WHERE email = ?', (email,)).fetchone()
+        conn.close()
+
+        if admin and check_password_hash(admin['password'], password):
+            session['admin_id'] = admin['id']
+            session['admin_email'] = admin['email']
+            return redirect(url_for('admin_dashboard'))
+        else:
+            flash('Invalid admin credentials.', 'danger')
+
+    return render_template('admin_login.html')
+
+@app.route('/admin/dashboard')
+@admin_required
+def admin_dashboard():
+    conn = get_db_connection()
+    total_users = conn.execute('SELECT COUNT(*) FROM users').fetchone()[0]
+    total_predictions = conn.execute('SELECT COUNT(*) FROM history').fetchone()[0]
+    recent_activity = conn.execute('''
+        SELECT h.*, u.name as user_name 
+        FROM history h 
+        JOIN users u ON h.user_id = u.id 
+        ORDER BY h.timestamp DESC LIMIT 5
+    ''').fetchall()
+    conn.close()
+    
+    return render_template('admin_dashboard.html', 
+                          total_users=total_users, 
+                          total_predictions=total_predictions, 
+                          recent_activity=recent_activity)
+
+@app.route('/admin/users')
+@admin_required
+def admin_users():
+    conn = get_db_connection()
+    users_list = conn.execute('SELECT * FROM users ORDER BY name ASC').fetchall()
+    conn.close()
+    return render_template('admin_users.html', users=users_list)
+
+@app.route('/admin/history')
+@admin_required
+def admin_history():
+    user_id = request.args.get('user_id')
+    conn = get_db_connection()
+    if user_id:
+        history_list = conn.execute('''
+            SELECT h.*, u.name as user_name 
+            FROM history h 
+            JOIN users u ON h.user_id = u.id 
+            WHERE h.user_id = ?
+            ORDER BY h.timestamp DESC
+        ''', (user_id,)).fetchall()
+    else:
+        history_list = conn.execute('''
+            SELECT h.*, u.name as user_name 
+            FROM history h 
+            JOIN users u ON h.user_id = u.id 
+            ORDER BY h.timestamp DESC
+        ''').fetchall()
+    conn.close()
+    return render_template('admin_history.html', history=history_list)
+
+@app.route('/admin/delete_user/<int:uid>')
+@admin_required
+def admin_delete_user(uid):
+    conn = get_db_connection()
+    conn.execute('DELETE FROM history WHERE user_id = ?', (uid,))
+    conn.execute('DELETE FROM users WHERE id = ?', (uid,))
+    conn.commit()
+    conn.close()
+    flash('User and their history deleted successfully.', 'success')
+    return redirect(url_for('admin_users'))
+
+@app.route('/admin/delete_history/<int:hid>')
+@admin_required
+def admin_delete_history(hid):
+    conn = get_db_connection()
+    conn.execute('DELETE FROM history WHERE id = ?', (hid,))
+    conn.commit()
+    conn.close()
+    flash('Record deleted.', 'success')
+    return redirect(url_for('admin_history'))
+
+@app.route('/admin/admins')
+@admin_required
+def admin_admins():
+    conn = get_db_connection()
+    admins_list = conn.execute('SELECT * FROM admins ORDER BY name ASC').fetchall()
+    conn.close()
+    return render_template('admin_admins.html', admins=admins_list)
+
+@app.route('/admin/add-user', methods=['GET', 'POST'])
+@admin_required
+def admin_add_user():
+    if request.method == 'POST':
+        name = request.form['name']
+        email = request.form['email']
+        password = request.form['password']
+
+        if not re.match(r'^[A-Za-z\s]+$', name):
+            flash('Name should contain only letters (A–Z, a–z)', 'danger')
+            return render_template('admin_add_user.html')
+
+        hashed_password = generate_password_hash(password)
+        conn = get_db_connection()
+        try:
+            conn.execute('INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
+                         (name, email, hashed_password))
+            conn.commit()
+            flash('User created successfully.', 'success')
+            return redirect(url_for('admin_users'))
+        except sqlite3.IntegrityError:
+            flash('Email address already exists.', 'danger')
+        finally:
+            conn.close()
+            
+    return render_template('admin_add_user.html')
+
+@app.route('/admin/add-admin', methods=['GET', 'POST'])
+@admin_required
+def admin_add_admin():
+    if request.method == 'POST':
+        name = request.form['name']
+        email = request.form['email']
+        password = request.form['password']
+
+        hashed_password = generate_password_hash(password)
+        conn = get_db_connection()
+        try:
+            conn.execute('INSERT INTO admins (name, email, password) VALUES (?, ?, ?)',
+                         (name, email, hashed_password))
+            conn.commit()
+            flash('New Admin created successfully.', 'success')
+            return redirect(url_for('admin_admins'))
+        except sqlite3.IntegrityError:
+            flash('Email address already exists.', 'danger')
+        finally:
+            conn.close()
+            
+    return render_template('admin_add_admin.html')
+
+@app.route('/admin/delete_admin/<int:aid>')
+@admin_required
+def admin_delete_admin(aid):
+    if aid == session.get('admin_id'):
+        flash('You cannot delete yourself!', 'danger')
+        return redirect(url_for('admin_admins'))
+        
+    conn = get_db_connection()
+    conn.execute('DELETE FROM admins WHERE id = ?', (aid,))
+    conn.commit()
+    conn.close()
+    flash('Admin removed.', 'success')
+    return redirect(url_for('admin_admins'))
+
+
+@app.route('/admin/logout')
+def admin_logout():
+    session.pop('admin_id', None)
+    session.pop('admin_email', None)
+    flash('Admin logged out.', 'info')
+    return redirect(url_for('admin_login'))
 
 # Initialize the database when the module is imported (needed for Gunicorn)
 init_db()
