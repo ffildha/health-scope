@@ -18,12 +18,24 @@ HEALTHSCOPE{% endif %}
         {% if session.get('language') == 'ml' %}മുൻകാല രോഗലക്ഷണ പരിശോധനകൾ കാണുക.{% else %}Review your previous symptom
         checks.{% endif %}
     </p>
+
+    <!-- Clear All Button -->
+    {% if history %}
+    <div class="mt-2">
+        <a href="{{ url_for('clear_history') }}" class="btn btn-outline-danger btn-sm rounded-pill px-3"
+           onclick="return confirm('{% if session.get('language') == 'ml' %}ഈ ചരിത്രം നീക്കംചെയ്യാൻ നിങ്ങൾ ആഗ്രഹിക്കുന്നുണ്ടോ?{% else %}Are you sure you want to delete all history?{% endif %}')">
+            <i class="bi bi-trash3 me-1"></i>
+            {% if session.get('language') == 'ml' %}എല്ലാം നീക്കംചെയ്യുക{% else %}Clear All History{% endif %}
+        </a>
+    </div>
+    {% endif %}
 </div>
 
 {% if history %}
+<!-- HISTORY TABLE WRAPPER WITH HORIZONTAL SCROLL FIX -->
 <div class="table-responsive rounded shadow-sm border border-1 mb-4 bg-white"
-    style="border-radius: 12px; overflow: hidden;">
-    <table class="table table-hover align-middle mb-0" style="font-size: 14px;">
+    style="border-radius: 12px; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+    <table class="table table-hover align-middle mb-0" style="font-size: 14px; min-width: 600px;">
         <thead class="bg-light">
             <tr>
                 {% if session.get('language') == 'ml' %}
@@ -32,12 +44,14 @@ HEALTHSCOPE{% endif %}
                 <th scope="col" class="py-3 text-muted" style="font-weight: 600;">രോഗം</th>
                 <th scope="col" class="py-3 text-muted" style="font-weight: 600;">ആത്മവിശ്വാസം</th>
                 <th scope="col" class="py-3 text-muted" style="font-weight: 600;">വകുപ്പ്</th>
+                <th scope="col" class="py-3 text-muted" style="font-weight: 600;">നടപടി</th>
                 {% else %}
                 <th scope="col" class="py-3 text-muted" style="font-weight: 600;">Date</th>
                 <th scope="col" class="py-3 text-muted" style="font-weight: 600;">Symptoms</th>
                 <th scope="col" class="py-3 text-muted" style="font-weight: 600;">Disease</th>
                 <th scope="col" class="py-3 text-muted" style="font-weight: 600;">Confidence</th>
                 <th scope="col" class="py-3 text-muted" style="font-weight: 600;">Department</th>
+                <th scope="col" class="py-3 text-muted" style="font-weight: 600;">Action</th>
                 {% endif %}
             </tr>
         </thead>
@@ -45,17 +59,24 @@ HEALTHSCOPE{% endif %}
             {% for record in history %}
             <tr>
                 <td class="text-nowrap text-muted" style="font-size: 13px;">{{ record['timestamp'][:16] }}</td>
-                <td style="max-width: 250px; font-style: italic; color: #495057;">"{{ record['symptoms'] }}"</td>
-                <td class="fw-bold text-dark">{{ record['predicted_disease'] }}</td>
+                <td style="min-width: 200px; max-width: 300px; font-style: italic; color: #495057;">"{{ record['symptoms'] }}"</td>
+                <td class="fw-bold text-dark text-nowrap">{{ record['predicted_disease'] }}</td>
                 <td>
                     {% set conf = record['confidence'] | int %}
                     <span class="badge {% if conf >= 70 %}bg-danger{% elif conf >= 40 %}bg-warning text-dark{% else %}bg-success{% endif %} rounded-pill">
                         {{ record['confidence'] }}%
                     </span>
                 </td>
-                <td class="text-muted" style="font-size: 13px;">
+                <td class="text-muted text-nowrap" style="font-size: 13px;">
                     <i class="bi bi-hospital me-1 text-primary"></i>
                     {{ record['department'] }}
+                </td>
+                <td>
+                    <a href="{{ url_for('delete_history', record_id=record['id']) }}" class="btn btn-outline-danger btn-sm py-1 px-2"
+                       onclick="return confirm('Are you sure you want to delete this history?')"
+                       title="Delete Record">
+                        <i class="bi bi-trash"></i>
+                    </a>
                 </td>
             </tr>
             {% endfor %}
@@ -73,7 +94,7 @@ HEALTHSCOPE{% endif %}
         endif %}
     </h6>
     <p class="text-muted mb-0" style="font-size: 14px; line-height: 1.5;">
-        {% if session.get('language') == 'ml' %}മുമ്പത്തെ വിശകലനം കണ്ടെത്തിയില്ല.{% else %}No previous analysis found.{%
+        {% if session.get('language') == 'ml' %}നിങ്ങളുടെ പരിശോധനയുടെ ചരിത്രമൊന്നും ഇതുവരെ സേവ് ചെയ്തിട്ടില്ല.{% else %}You haven't checked any symptoms yet.{%
         endif %}
     </p>
 </div>

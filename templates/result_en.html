@@ -63,9 +63,7 @@
                         style="border-left: 3px solid #0d6efd !important;">
                         <i class="bi bi-hospital text-primary me-2"></i>
                         <span style="font-size: 13px; font-weight: 600;" class="text-dark">
-                            Recommended Department: <span class="text-primary">{{ dept_map.get(disease, 'General
-                                Physician')
-                                }}</span>
+                            Recommended Department: <span class="text-primary">{{ dept_map.get(disease, 'General Physician') }}</span>
                         </span>
                     </div>
                 </div>
@@ -127,9 +125,8 @@
             style="width: 56px; height: 56px;">
             <i class="bi bi-shield-exclamation fs-3"></i>
         </div>
-        <h6 class="fw-bold text-dark mb-2">No strong match found.</h6>
-        <p class="text-muted mb-0" style="font-size: 14px; line-height: 1.5;">Our system couldn't confidently identify a
-            match. Please consult a <strong>General Physician</strong> for a comprehensive evaluation.</p>
+        <h6 class="fw-bold text-dark mb-2">No matching disease found.</h6>
+        <p class="text-muted mb-0" style="font-size: 14px; line-height: 1.5;">Please try entering more relevant or detailed symptoms.</p>
     </div>
     {% endif %}
 </div>

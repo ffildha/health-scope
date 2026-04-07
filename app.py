@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
+from datetime import datetime
 import sqlite3
 import re
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -36,10 +37,9 @@ def init_db():
             password TEXT NOT NULL
         )
     ''')
-    # Refresh the history table with the new schema
-    cursor.execute('DROP TABLE IF EXISTS history')
+    # cursor.execute('DROP TABLE IF EXISTS history')  # REMOVED: To persist user history
     cursor.execute('''
-        CREATE TABLE history (
+        CREATE TABLE IF NOT EXISTS history (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
             symptoms TEXT,
@@ -193,7 +193,13 @@ def match_diseases(raw_text):
         normalized_text = normalize_text(raw_text)
         vectorized_text = ml_vectorizer.transform([normalized_text])
         
-        weight_features = np.array([get_symptom_weights(normalized_text)])
+        # CRITICAL FIX: Check if the input contains ANY known symptoms from vocabulary or weights
+        # If vectorized_text has no non-zero elements AND manual weights are zero, input is meaningless
+        symptom_weights = get_symptom_weights(normalized_text)
+        if vectorized_text.nnz == 0 and sum(symptom_weights) == 0:
+            return {} # No matching disease found
+            
+        weight_features = np.array([symptom_weights])
         combined_features = hstack([vectorized_text, weight_features])
         
         probabilities = ml_model.predict_proba(combined_features)[0]
@@ -215,6 +221,13 @@ def match_diseases(raw_text):
                     "confidence": confidence
                 }
                 
+    # Filter out all results if the highest confidence is too low (below 40.0%) 
+    # to avoid returning random/low-confidence predictions.
+    if results:
+        max_conf = max(data['confidence'] for data in results.values())
+        if max_conf < 40.0:
+            return {}
+            
     # Sort diseases by confidence descending
     sorted_results = dict(sorted(results.items(), key=lambda item: item[1]['confidence'], reverse=True))
     return sorted_results
@@ -232,6 +245,11 @@ def signup():
         name = request.form['name']
         email = request.form['email']
         password = request.form['password']
+
+        # Backend validation for name (only alphabets and spaces)
+        if not re.match(r'^[A-Za-z\s]+$', name):
+            flash('Name should contain only letters (A–Z, a–z)', 'danger')
+            return render_template('signup.html')
 
         # Hash the password for security (never store plain text passwords!)
         hashed_password = generate_password_hash(password)
@@ -336,11 +354,14 @@ def symptom_en():
             confidence = int(matches[top_disease]['confidence']) # Store as INTEGER per spec
             department = department_mapping.get(top_disease, "General Physician")
             
+            # GENERATE ACCURATE TIMESTAMP IN PYTHON PER SPEC
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            
             conn = get_db_connection()
             conn.execute('''
-                INSERT INTO history (user_id, symptoms, predicted_disease, confidence, department, language)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ''', (session['user_id'], raw_text, top_disease, confidence, department, 'en'))
+                INSERT INTO history (user_id, symptoms, predicted_disease, confidence, department, language, timestamp)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (session['user_id'], raw_text, top_disease, confidence, department, 'en', current_time))
             conn.commit()
             conn.close()
             
@@ -367,11 +388,14 @@ def symptom_ml():
             confidence = int(matches[top_disease]['confidence']) # Store as INTEGER per spec
             department = department_mapping_ml.get(top_disease, "ജനറൽ ഫിസിഷ്യനെ സമീപിക്കുക")
             
+            # GENERATE ACCURATE TIMESTAMP IN PYTHON PER SPEC
+            current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            
             conn = get_db_connection()
             conn.execute('''
-                INSERT INTO history (user_id, symptoms, predicted_disease, confidence, department, language)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ''', (session['user_id'], raw_text, top_disease, confidence, department, 'ml'))
+                INSERT INTO history (user_id, symptoms, predicted_disease, confidence, department, language, timestamp)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (session['user_id'], raw_text, top_disease, confidence, department, 'ml', current_time))
             conn.commit()
             conn.close()
 
@@ -425,6 +449,31 @@ def history():
     conn.close()
     
     return render_template('history.html', name=session['user_name'], history=history_records)
+
+@app.route('/delete_history/<int:record_id>')
+def delete_history(record_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
+    conn = get_db_connection()
+    conn.execute('DELETE FROM history WHERE id = ? AND user_id = ?', (record_id, session['user_id']))
+    conn.commit()
+    conn.close()
+    flash('History record deleted.', 'success')
+    return redirect(url_for('history'))
+
+@app.route('/clear_history')
+def clear_history():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
+    conn = get_db_connection()
+    conn.execute('DELETE FROM history WHERE user_id = ?', (session['user_id'],))
+    conn.commit()
+    conn.close()
+    flash('All history cleared.', 'success')
+    return redirect(url_for('history'))
+
 
 # Initialize the database when the module is imported (needed for Gunicorn)
 init_db()
