@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Add New User - Admin{% endblock %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <div class="d-inline-flex align-items-center justify-content-center bg-light text-primary rounded-circle mb-3 shadow-sm"
+        style="width: 64px; height: 64px;">
+        <i class="bi bi-person-plus-fill fs-2"></i>
+    </div>
+    <h4 class="page-title mb-1">Add New User</h4>
+    <p class="text-muted" style="font-size: 14px;">Register a new user to the system</p>
+</div>
+
+<form method="POST" action="{{ url_for('admin_add_user') }}">
+    <div class="mb-3">
+        <label for="name" class="form-label">Full Name</label>
+        <div class="input-group">
+            <span class="input-group-text bg-light border-end-0 px-3" style="border-radius: 12px 0 0 12px;"><i class="bi bi-person text-muted"></i></span>
+            <input type="text" class="form-control border-start-0 ps-1" id="name" name="name" placeholder="Enter user's full name" pattern="[A-Za-z\s]+" title="Name should contain only letters" required>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label for="email" class="form-label">Email Address</label>
+        <div class="input-group">
+            <span class="input-group-text bg-light border-end-0 px-3" style="border-radius: 12px 0 0 12px;"><i class="bi bi-envelope text-muted"></i></span>
+            <input type="email" class="form-control border-start-0 ps-1" id="email" name="email" placeholder="user@example.com" required>
+        </div>
+    </div>
+
+    <div class="mb-4">
+        <label for="password" class="form-label">Temporary Password</label>
+        <div class="input-group">
+            <span class="input-group-text bg-light border-end-0 px-3" style="border-radius: 12px 0 0 12px;"><i class="bi bi-lock text-muted"></i></span>
+            <input type="password" class="form-control border-start-0 ps-1 password-input" id="password" name="password" placeholder="Create a secure password" required>
+            <span class="input-group-text toggle-password bg-white cursor-pointer px-3" style="border-radius: 0 12px 12px 0;"><i class="bi bi-eye text-muted"></i></span>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100 py-3 mb-3 fw-bold shadow-sm">
+        Create User Account <i class="bi bi-check-circle ms-1"></i>
+    </button>
+    <a href="{{ url_for('admin_users') }}" class="btn btn-outline-secondary w-100 py-3 fw-bold">Cancel</a>
+</form>
+{% endblock %}

@@ -51,11 +51,16 @@
             border-radius: 24px;
             box-shadow: var(--card-shadow);
             width: 100%;
-            /* Strict max width for consistency (450px) */
+            /* Default max-width for consistency (450px) */
             max-width: 450px;
             overflow: hidden;
             padding: 10px;
             backdrop-filter: blur(10px);
+            transition: max-width 0.3s ease;
+        }
+
+        .auth-card.wide-card {
+            max-width: 900px;
         }
 
         .auth-header {
@@ -249,6 +254,66 @@
             text-align: center;
             margin-bottom: 25px;
         }
+
+        /* --- GLOBAL BRAND UNIFICATION --- */
+        .text-primary, 
+        .text-primary-teal {
+            color: var(--primary-color) !important;
+        }
+        
+        .bg-primary-light {
+            background-color: var(--primary-light) !important;
+        }
+        
+        .btn-outline-primary {
+            color: var(--primary-color) !important;
+            border-color: var(--primary-color) !important;
+            border-width: 1.5px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+        
+        .btn-outline-primary:hover {
+            background-color: var(--primary-color) !important;
+            border-color: var(--primary-color) !important;
+            color: white !important;
+            transform: translateY(-2px);
+        }
+        
+        .btn-outline-danger {
+            border-radius: 12px;
+            border-width: 1.5px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-outline-danger:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.15);
+        }
+        
+        .transition-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .transition-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px -10px rgba(0,0,0,0.1) !important;
+        }
+        
+        .badge.bg-primary {
+            background-color: var(--primary-color) !important;
+        }
+        
+        .nav-pills .nav-link.active {
+            background-color: var(--primary-color) !important;
+        }
+
+        .nav-pills .nav-link:hover:not(.active) {
+            color: var(--primary-color) !important;
+            background-color: #f1f5f9;
+        }
+
     </style>
     <!-- Allow child templates to append styles -->
     {% block extra_css %}{% endblock %}
@@ -256,8 +321,8 @@
 
 <body>
 
-    <div class="container d-flex justify-content-center">
-        <div class="auth-card">
+    <div class="container d-flex justify-content-center py-4">
+        <div class="auth-card {% block card_class %}{% endblock %}">
             <!-- GLOBAL BRAND HEADER (Always visible on every page) -->
             <div class="auth-header border-bottom pb-4 mb-4">
                 <div class="brand-logo-container">

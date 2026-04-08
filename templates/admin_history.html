@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}Global Prediction History - Admin{% endblock %}
+
+{% block card_class %}wide-card{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0">
+            <i class="bi bi-clock-history me-2 text-primary"></i>Global History
+            {% if request.args.get('user_id') %}
+            <span class="badge bg-primary rounded-pill small ms-2" style="font-size: 11px;">User Filtered: #{{ request.args.get('user_id') }}</span>
+            {% endif %}
+        </h5>
+        {% if request.args.get('user_id') %}
+        <a href="{{ url_for('admin_history') }}" class="btn btn-outline-secondary btn-sm rounded-pill">
+            <i class="bi bi-x-circle me-1"></i> Clear Filter
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Nav Pills -->
+<ul class="nav nav-pills mb-4 bg-light p-1 rounded-pill justify-content-center" style="font-size: 14px;">
+    <li class="nav-item">
+        <a class="nav-link rounded-pill px-4" href="{{ url_for('admin_dashboard') }}">Overview</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link rounded-pill px-4" href="{{ url_for('admin_users') }}">User Management</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link active rounded-pill px-4" href="{{ url_for('admin_history') }}">Global History</a>
+    </li>
+</ul>
+
+<div class="p-4 bg-white border border-1 rounded-4 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" style="font-size: 13px;">
+            <thead class="bg-light">
+                <tr>
+                    <th class="py-3 border-0 text-muted" style="font-weight: 600;">Time</th>
+                    <th class="py-3 border-0 text-muted" style="font-weight: 600;">User</th>
+                    <th class="py-3 border-0 text-muted" style="font-weight: 600;">Symptoms</th>
+                    <th class="py-3 border-0 text-muted" style="font-weight: 600;">Prediction</th>
+                    <th class="py-3 border-0 text-muted" style="font-weight: 600;">Confidence</th>
+                    <th class="py-3 border-0 text-muted" style="font-weight: 600;">Lang</th>
+                    <th class="py-3 border-0 text-muted" style="font-weight: 600; text-align: center;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in history %}
+                <tr>
+                    <td class="text-muted">{{ record.timestamp[:16] }}</td>
+                    <th class="fw-bold">{{ record.user_name }}</th>
+                    <td class="small" style="max-width: 200px; white-space: normal;">{{ record.symptoms }}</td>
+                    <td>
+                        <span class="badge bg-danger rounded-pill">{{ record.predicted_disease }}</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-warning text-dark">{{ record.confidence }}%</span>
+                    </td>
+                    <td class="uppercase">{{ record.language }}</td>
+                    <td align="center">
+                        <a href="{{ url_for('admin_delete_history', hid=record.id) }}" class="btn btn-sm btn-outline-danger" 
+                           onclick="return confirm('Delete this prediction record?')">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not history %}
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">No global diagnostic history found.</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<!-- Standardized via base.html -->
+<style>
+    .uppercase { text-transform: uppercase; }
+</style>
+{% endblock %}
