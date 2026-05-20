@@ -53,8 +53,8 @@ symptom_map = {
 
 def normalize_text(text):
     text = str(text).lower()
-    # Remove punctuation while keeping English and Malayalam characters
-    text = re.sub(r'[^\w\s\u0d00-\u0d7f]', '', text)
+    # Remove punctuation
+    text = re.sub(r'[^\w\s]', '', text)
     
     # Replace known symptom variations using the dictionary (sort by length to match longest first)
     sorted_variants = sorted(symptom_map.items(), key=lambda x: len(x[0]), reverse=True)
