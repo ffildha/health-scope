@@ -6,6 +6,7 @@ from sklearn.metrics import accuracy_score
 import pickle
 import os
 import re
+import unicodedata
 import numpy as np
 from scipy.sparse import hstack
 
@@ -24,16 +25,46 @@ symptom_map = {
 
     # Asthma
     "breathing problem": "shortness of breath",
+    "breathing problems": "shortness of breath",
     "difficulty breathing": "shortness of breath",
     "difficulty in breathing": "shortness of breath",
+    "trouble breathing": "shortness of breath",
+    "hard to breathe": "shortness of breath",
+    "breathlessness": "shortness of breath",
+    "breathless": "shortness of breath",
     "cant breathe": "shortness of breath",
     "cannot breathe": "shortness of breath",
     "cant breath": "shortness of breath",
+    "out of breath": "shortness of breath",
     "run out of breath": "shortness of breath",
     "run out of breth": "shortness of breath",
-    "breth": "breath",
+    "breth": "shortness of breath",
+    "gasping for air": "shortness of breath",
     "breath easily": "shortness of breath",
+    "wheeze": "wheezing",
+    "tight chest": "chest tightness",
+    "chest feels tight": "chest tightness",
+    "persistent cough": "coughing",
+    "dry cough": "coughing",
+    "night cough": "coughing",
+    "asthmatic": "asthma",
+    "asthma attack": "asthma",
+    "ആസ്ത്മ": "asthma",
     "ശ്വാസം എടുക്കാൻ ബുദ്ധിമുട്ട്": "ശ്വാസം മുട്ടൽ",
+    "ശ്വാസം വലിക്കാൻ ബുദ്ധിമുട്ട്": "ശ്വാസം മുട്ടൽ",
+    "ശ്വാസം എടുക്കാൻ പറ്റുന്നില്ല": "ശ്വാസം മുട്ടൽ",
+    "ശ്വാസം കിട്ടുന്നില്ല": "ശ്വാസം മുട്ടൽ",
+    "ശ്വാസം മുട്ടുന്നു": "ശ്വാസം മുട്ടൽ",
+    "ശ്വാസക്കുറവ്": "ശ്വാസം മുട്ടൽ",
+    "ശ്വാസതടസം": "ശ്വാസം മുട്ടൽ",
+    "കിതപ്പ്": "ശ്വാസം മുട്ടൽ",
+    "കിതപ്പുണ്ട്": "ശ്വാസം മുട്ടൽ",
+    "വീസിങ്": "വീസിംഗ്",
+    "നെഞ്ച് മുറുക്ക്": "നെഞ്ച് കുരുക്ക്",
+    "നെഞ്ച് ഇറുക്ക്": "നെഞ്ച് കുരുക്ക്",
+    "ചുമ": "coughing",
+    "ചുമയുണ്ട്": "coughing",
+    "ചുമയ്ക്കുന്നു": "coughing",
 
     # Arthritis
     "knee pain": "joint pain",
@@ -51,10 +82,19 @@ symptom_map = {
     "തല ചുറ്റുന്നു": "തല ചുറ്റൽ"
 }
 
+ASTHMA_DISEASE_TERMS = ["asthma"]
+ASTHMA_BREATHING_TERMS = ["shortness of breath", "ശ്വാസം മുട്ടൽ"]
+ASTHMA_WHEEZING_TERMS = ["wheezing", "വീസിംഗ്"]
+ASTHMA_CHEST_TIGHTNESS_TERMS = ["chest tightness", "നെഞ്ച് കുരുക്ക്"]
+ASTHMA_COUGH_TERMS = ["coughing"]
+
+def remove_punctuation(text):
+    return ''.join(char for char in text if not unicodedata.category(char).startswith('P'))
+
 def normalize_text(text):
     text = str(text).lower()
     # Remove punctuation
-    text = re.sub(r'[^\w\s]', '', text)
+    text = remove_punctuation(text)
     
     # Replace known symptom variations using the dictionary (sort by length to match longest first)
     sorted_variants = sorted(symptom_map.items(), key=lambda x: len(x[0]), reverse=True)
@@ -102,7 +142,7 @@ def get_duration_score(text):
     return score
 
 def get_symptom_weights(text):
-    text = str(text).lower()
+    text = normalize_text(text)
     duration_bonus = get_duration_score(text)
     
     weights = {
@@ -111,28 +151,29 @@ def get_symptom_weights(text):
     }
     
     # Migraine
-    if "headache" in text or "തലവേദന" in text: weights["Migraine"] += 3
-    if "nausea" in text or "ഛർദ്ദി" in text: weights["Migraine"] += 2
-    if "light sensitivity" in text or "വെളിച്ചം സഹിക്കാത്തത്" in text: weights["Migraine"] += 2
-    if "vomiting" in text: weights["Migraine"] += 2
+    if any(word in text for word in ["headache", "head ache", "severe headache", "തലവേദന", "തല വേദന", "തലവേദനയുണ്ട്","തലവേദനയാണ്", "കടുത്ത തലവേദന", "ഭയങ്കര തലവേദന"]): weights["Migraine"] += 3
+    if any(word in text for word in ["nausea", "ഓക്കാനം", "ഛർദ്ദിക്കാൻ വരുന്നു"]): weights["Migraine"] += 2
+    if any(word in text for word in ["light sensitivity", "വെളിച്ചം സഹിക്കാത്തത്", "വെളിച്ചം കാണാൻ വയ്യ", "കണ്ണിലേക്ക് വെളിച്ചം അടിക്കാൻ വയ്യ"]): weights["Migraine"] += 2
+    if any(word in text for word in ["vomiting", "ഛർദ്ദി"]): weights["Migraine"] += 2
 
     # Hypertension
-    if "dizziness" in text or "തല ചുറ്റൽ" in text: weights["Hypertension"] += 3
-    if "blurred vision" in text or "കാഴ്ച മങ്ങൽ" in text: weights["Hypertension"] += 2
+    if any(word in text for word in ["dizziness", "dizzy", "feeling dizzy", "തല ചുറ്റൽ", "തലചുറ്റൽ", "തല ചുറ്റുന്നു", "തല കറക്കം", "തല കറങ്ങുന്നു"]): weights["Hypertension"] += 3
+    if any(word in text for word in ["blurred vision", "blurry vision", "bluzzed vision", "കാഴ്ച മങ്ങൽ", "കാഴ്ച മങ്ങുന്നു", "കണ്ണിന് മങ്ങൽ", "കാഴ്ചയ്ക്ക് മങ്ങൽ"]): weights["Hypertension"] += 2
     if "chest pressure" in text: weights["Hypertension"] += 2
     if "fatigue" in text or "ക്ഷീണം" in text: weights["Hypertension"] += 1
 
     # Diabetes
     if "frequent urination" in text or "മൂത്രം കൂടുതലായി പോകുന്നു" in text: weights["Diabetes"] += 3
-    if "excessive thirst" in text or "ദാഹം" in text or "വളരെ ദാഹം" in text: weights["Diabetes"] += 3
-    if "fatigue" in text or "ക്ഷീണം" in text: weights["Diabetes"] += 2
+    if "excessive thirst" in text or "excessive thurst" in text or "ദാഹം" in text or "വളരെ ദാഹം" in text: weights["Diabetes"] += 3
+    if "fatigue" in text or "ക്ഷീണം" in text or "tired and dehydrated" in text or "ക്ഷീണവും നിർജ്ജലീകരണവും" in text: weights["Diabetes"] += 2
     if "blurred vision" in text or "കാഴ്ച മങ്ങൽ" in text: weights["Diabetes"] += 2
 
     # Asthma
-    if "shortness of breath" in text or "ശ്വാസം മുട്ടൽ" in text or "breath" in text: weights["Asthma"] += 4
-    if "wheezing" in text or "വീസിംഗ്" in text: weights["Asthma"] += 3
-    if "chest tightness" in text or "നെഞ്ച് കുരുക്ക്" in text: weights["Asthma"] += 2
-    if "coughing" in text: weights["Asthma"] += 2
+    if any(word in text for word in ASTHMA_DISEASE_TERMS): weights["Asthma"] += 5
+    if any(word in text for word in ASTHMA_BREATHING_TERMS): weights["Asthma"] += 4
+    if any(word in text for word in ASTHMA_WHEEZING_TERMS): weights["Asthma"] += 3
+    if any(word in text for word in ASTHMA_CHEST_TIGHTNESS_TERMS): weights["Asthma"] += 2
+    if any(word in text for word in ASTHMA_COUGH_TERMS): weights["Asthma"] += 2
 
     # Gastritis
     if "stomach burning" in text or "വയറു കത്തൽ" in text or "വയറ് കത്തൽ" in text: weights["Gastritis"] += 3

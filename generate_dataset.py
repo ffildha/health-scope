@@ -36,11 +36,20 @@ def generate_dataset(filename="symptoms_dataset.csv", rows_per_disease=500):
         "Asthma": [
             ["shortness of breath"],
             ["difficulty breathing"],
+            ["breathlessness"],
             ["wheezing"],
             ["chest tightness"],
+            ["persistent cough"],
+            ["asthma"],
             ["ശ്വാസം മുട്ടൽ"],
+            ["ശ്വാസം എടുക്കാൻ ബുദ്ധിമുട്ട്"],
+            ["ശ്വാസക്കുറവ്"],
+            ["കിതപ്പ്"],
+            ["നെഞ്ച് കുരുക്ക്"],
             ["shortness of breath", "wheezing"],
-            ["difficulty breathing", "chest tightness"]
+            ["difficulty breathing", "chest tightness"],
+            ["asthma", "shortness of breath"],
+            ["ശ്വാസം മുട്ടൽ", "ചുമ"]
         ],
         "Gastritis": [
             ["burning stomach"],
@@ -68,7 +77,7 @@ def generate_dataset(filename="symptoms_dataset.csv", rows_per_disease=500):
         "Migraine": ["vomiting", "aura", "one-sided pain", "ഛർദ്ദി", "വെളിച്ചം സഹിക്കാത്തത്"],
         "Hypertension": ["palpitations", "blurred vision", "തലവേദന"],
         "Diabetes": ["weight loss", "ക്ഷീണം", "വളരെ ദാഹം"],
-        "Asthma": ["coughing", "ശ്വാസം എടുക്കാൻ ബുദ്ധിമുട്ട്", "നെഞ്ച് കുരുക്ക്"],
+        "Asthma": ["coughing", "persistent cough", "breathlessness", "asthma", "ശ്വാസം എടുക്കാൻ ബുദ്ധിമുട്ട്", "ശ്വാസക്കുറവ്", "കിതപ്പ്", "ആസ്ത്മ", "വീസിംഗ്", "നെഞ്ച് കുരുക്ക്", "ചുമ"],
         "Gastritis": ["heartburn", "loss of appetite", "gas", "അമ്ലം", "ഛർദ്ദി"],
         "Arthritis": ["joint swelling", "tenderness", "limited movement", "സന്ധി മുറുകൽ"]
     }
