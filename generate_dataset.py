@@ -20,21 +20,30 @@ def generate_dataset(filename="symptoms_dataset.csv", rows_per_disease=500):
             ["high blood pressure", "dizziness"],
             ["blurred vision", "fatigue"],
             ["chest pressure"],
+            ["chest pain"],
+            ["നെഞ്ച് വേദന"],
+            ["മാർവേദന"],
             ["തല ചുറ്റൽ"],
             ["കാഴ്ച മങ്ങൽ"],
             ["high blood pressure", "fatigue"],
-            ["fatigue", "dizziness"]
+            ["fatigue", "dizziness"],
+            ["tired", "chest pain"]
         ],
         "Diabetes": [
             ["frequent urination", "excessive thirst"],
             ["fatigue", "blurred vision"],
             ["weight loss", "excessive thirst"],
+            ["thirsty", "dehydration"],
+            ["dehydrated", "fatigue"],
             ["മൂത്രം കൂടുതലായി പോകുന്നു", "ദാഹം"],
+            ["ദാഹിക്കുന്നു", "നിർജ്ജലീകരണം"],
+            ["തളർച്ച", "ദാഹം"],
             ["ക്ഷീണം", "കാഴ്ച മങ്ങൽ"],
             ["frequent urination", "excessive thirst", "fatigue"]
         ],
         "Asthma": [
             ["shortness of breath"],
+            ["breathing difficulty"],
             ["difficulty breathing"],
             ["breathlessness"],
             ["wheezing"],
@@ -75,8 +84,8 @@ def generate_dataset(filename="symptoms_dataset.csv", rows_per_disease=500):
     # Add extra random noise symptoms for variability within the disease
     extra_symptoms = {
         "Migraine": ["vomiting", "aura", "one-sided pain", "ഛർദ്ദി", "വെളിച്ചം സഹിക്കാത്തത്"],
-        "Hypertension": ["palpitations", "blurred vision", "തലവേദന"],
-        "Diabetes": ["weight loss", "ക്ഷീണം", "വളരെ ദാഹം"],
+        "Hypertension": ["palpitations", "blurred vision", "തലവേദന", "chest pain", "tired", "നെഞ്ച് വേദന", "മാർവേദന", "തളർച്ച"],
+        "Diabetes": ["weight loss", "ക്ഷീണം", "വളരെ ദാഹം", "thirsty", "dehydration", "dehydrated", "ദാഹിക്കുന്നു", "നിർജ്ജലീകരണം", "തളർച്ച"],
         "Asthma": ["coughing", "persistent cough", "breathlessness", "asthma", "ശ്വാസം എടുക്കാൻ ബുദ്ധിമുട്ട്", "ശ്വാസക്കുറവ്", "കിതപ്പ്", "ആസ്ത്മ", "വീസിംഗ്", "നെഞ്ച് കുരുക്ക്", "ചുമ"],
         "Gastritis": ["heartburn", "loss of appetite", "gas", "അമ്ലം", "ഛർദ്ദി"],
         "Arthritis": ["joint swelling", "tenderness", "limited movement", "സന്ധി മുറുകൽ"]
